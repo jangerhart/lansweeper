@@ -1,0 +1,28 @@
+Select Top (1000000) tblAssets.AssetID,
+  tblAssets.AssetName,
+  tblAssets.Domain,
+  tblAssets.IPAddress,
+  tsysAssetTypes.AssetTypename As [Asset Type],
+  tblAssets.Username,
+  tblAssets.Userdomain,
+  tblAssets.Mac,
+  tblAssets.Lastseen,
+  tblAssets.Version,
+  tblAssetCustom.Manufacturer,
+  tblAssetCustom.Model,
+  tblAssetCustom.DNSName,
+  tblAssets.Description,
+  tblAssets.FQDN,
+  tblAssetCustom.HTTPTitle,
+  tblAssetCustom.HttpServer,
+  tblAssetCustom.HttpsServer,
+  tblAssetCustom.SMTPheader,
+  tblAssetCustom.FTPheader,
+  tblAssetCustom.Serialnumber
+From tblAssets
+  Inner Join tsysAssetTypes On tblAssets.Assettype = tsysAssetTypes.AssetType
+  Inner Join tblAssetCustom On tblAssets.AssetID = tblAssetCustom.AssetID
+  Inner Join tblState On tblAssetCustom.State = tblState.State
+Where tsysAssetTypes.AssetTypename <> 'location' And tblState.Statename =
+  'active'
+Order By tblAssets.AssetName Desc
