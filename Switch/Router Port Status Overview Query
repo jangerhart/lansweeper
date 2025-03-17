@@ -1,0 +1,75 @@
+Select Distinct Top 1000000 tsysAssetTypes.AssetTypeIcon10 As icon,
+  tblAssets.AssetID,
+  tblAssets.AssetName,
+  tblSNMPInfo.ifAlias,
+  tsysAssetTypes.AssetTypename As AssetType,
+  tblAssets.IPAddress,
+  tblAssets.Firstseen,
+  tblAssets.Lastseen,
+  tblSNMPInfo.IfIndex As [If],
+  tblSNMPInfo.IfDescription As Name,
+  tblSNMPIfTypes.IfTypename As Type,
+  Case
+    When tblSNMPInfo.IfAdminstatus = 1 Then 'Up'
+    When tblSNMPInfo.IfAdminstatus = 2 Then 'Down'
+    When tblSNMPInfo.IfAdminstatus = 3 Then 'Testing'
+    Else 'Other'
+  End As 'Admin Status',
+  Case
+    When tblSNMPInfo.IfOperstatus = 1 Then 'Up'
+    When tblSNMPInfo.IfOperstatus = 2 Then 'Down'
+    When tblSNMPInfo.IfOperstatus = 3 Then 'Testing'
+    When tblSNMPInfo.IfOperstatus = 4 Then 'Unknown'
+    When tblSNMPInfo.IfOperstatus = 5 Then 'Dormant'
+    When tblSNMPInfo.IfOperstatus = 6 Then 'NotPresent'
+    When tblSNMPInfo.IfOperstatus = 7 Then 'LowLayerDown'
+    Else 'Other'
+  End As 'Operational Status',
+  tblSNMPAssetMac.LastSeen As 'Last Detected',
+  tblSNMPAssetMac.Lastchanged As 'Last Changed',
+  tblAssets1.Firstseen As 'Asset First Seen',
+  tblSNMPInfo.IfMTU As MTU,
+  Ceiling(tblSNMPInfo.IfSpeed / 1000 / 1000) As Speed,
+  tblSNMPInfo.IfIPAddress As IP,
+  tblSNMPInfo.IfMask As Mask,
+  tblSNMPInfo.IfMacaddress As SwitchportMAC,
+  tblSNMPAssetMac.AssetMacAddress As AssetMAC,
+  Case
+    When tblSNMPAssetMac.AssetMacAddress Is Null Then 'No MAC detected'
+    When tsysMacVendor.Vendor Is Null Then 'MAC detected but Vendor not found'
+    Else tsysMacVendor.Vendor
+  End As AssetVendor,
+  tsysAssetTypes_1.AssetTypeIcon16 As icon2,
+  tblAssets1.AssetName As deviceassetname,
+  tblAssets1.Username,
+  tblAssets1.Userdomain,
+  tblSNMPInfo.Vlan,
+  Case
+    When tblSNMPInfo.IfOperstatus = 1 And tblSNMPInfo.IfAdminstatus = 1 Then
+      '#d4f4be'
+    When tblSNMPInfo.IfOperstatus = 2 And tblSNMPInfo.IfAdminstatus = 1 Then
+      '#ffff00'
+    When tblSNMPInfo.IfOperstatus = 2 And tblSNMPInfo.IfAdminstatus = 2 Then
+      '#ffadad'
+    Else '#00ffff'
+  End As backgroundcolor
+From tblAssets
+  Inner Join tsysAssetTypes On tsysAssetTypes.AssetType = tblAssets.Assettype
+  Inner Join tblSNMPInfo On tblAssets.AssetID = tblSNMPInfo.AssetID
+  Inner Join tblSNMPIfTypes On tblSNMPIfTypes.IfType = tblSNMPInfo.IfType
+  Left Join tblSNMPAssetMac On tblSNMPAssetMac.AssetID = tblSNMPInfo.AssetID And
+      tblSNMPAssetMac.IfIndex = tblSNMPInfo.IfIndex
+  Left Join tsysMacVendor On
+      tsysMacVendor.MAC = SubString(tblSNMPAssetMac.AssetMacAddress, 1, 2) +
+      SubString(tblSNMPAssetMac.AssetMacAddress, 4, 2) +
+      SubString(tblSNMPAssetMac.AssetMacAddress, 7, 2)
+  Left Join tblAssetMacAddress On tblAssetMacAddress.Mac =
+      tblSNMPAssetMac.AssetMacAddress
+  Left Join tblAssets tblAssets1 On
+      tblAssets1.AssetID = tblAssetMacAddress.AssetID
+  Left Outer Join tsysAssetTypes As tsysAssetTypes_1 On tblAssets1.Assettype =
+      tsysAssetTypes_1.AssetType
+Where (tsysAssetTypes.AssetTypename = 'switch' Or tsysAssetTypes.AssetTypename =
+    'router')
+Order By tblAssets.AssetName,
+  [If]
